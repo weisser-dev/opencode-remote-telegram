@@ -1,0 +1,79 @@
+name: Release & Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.0.0, 1.1.0, 2.0.0)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: ${{ inputs.version }}"
+            echo "Expected: X.Y.Z (e.g. 1.0.0)"
+            exit 1
+          fi
+
+      - name: Set version in package.json
+        run: npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "release: v${{ inputs.version }}" || true
+          git tag -a "v${{ inputs.version }}" -m "v${{ inputs.version }}"
+          git push origin main
+          git push origin "v${{ inputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          body: |
+            ## opencode-remote-telegram v${{ inputs.version }}
+
+            Published to npm: [`opencode-remote-telegram@${{ inputs.version }}`](https://www.npmjs.com/package/opencode-remote-telegram/v/${{ inputs.version }})
+
+            ```bash
+            npm install -g opencode-remote-telegram@${{ inputs.version }}
+            ```
+
+            See [CHANGELOG.md](https://github.com/weisser-dev/opencode-remote-telegram/blob/main/CHANGELOG.md) for details.
+          generate_release_notes: true

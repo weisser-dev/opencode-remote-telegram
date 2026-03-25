@@ -230,6 +230,19 @@ Debug output shows every incoming message, command, callback and outgoing reply:
 
 ---
 
+## Releasing
+
+Releases are triggered manually via GitHub Actions:
+
+1. Update `CHANGELOG.md` with the new version
+2. Go to **Actions** → **Release & Publish to npm** → **Run workflow**
+3. Enter the version (e.g. `1.1.0`)
+4. The pipeline builds, tests, publishes to npm, creates a git tag and GitHub Release
+
+No auto-publish — every release is a deliberate action.
+
+---
+
 ## Inspired by
 
 This project was inspired by [RoundTable02/remote-opencode](https://github.com/RoundTable02/remote-opencode) — if you're looking for a way to control OpenCode via **Discord** instead of Telegram, check it out.
