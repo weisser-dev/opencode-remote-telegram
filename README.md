@@ -4,7 +4,7 @@
 
 You know controlling an agent tool via Telegram from OpenClaw? Or asking OpenCode from Discord? This is the solution for **OpenCode from Telegram**.
 
-**npm:** [npmjs.com/package/opencode-remote-telegram](https://www.npmjs.com/package/opencode-remote-telegram)
+**npm:** [npmjs.com/package/@weisser-dev/opencode-remote-telegram](https://www.npmjs.com/package/@weisser-dev/opencode-remote-telegram)
 **GitHub:** [github.com/weisser-dev/opencode-remote-telegram](https://github.com/weisser-dev/opencode-remote-telegram)
 
 ---
@@ -12,7 +12,7 @@ You know controlling an agent tool via Telegram from OpenClaw? Or asking OpenCod
 ## Quickstart
 
 ```bash
-npm install -g opencode-remote-telegram
+npm install -g @weisser-dev/opencode-remote-telegram
 opencode-remote-telegram start
 ```
 

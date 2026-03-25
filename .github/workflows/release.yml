@@ -69,10 +69,10 @@ jobs:
           body: |
             ## opencode-remote-telegram v${{ inputs.version }}
 
-            Published to npm: [`opencode-remote-telegram@${{ inputs.version }}`](https://www.npmjs.com/package/opencode-remote-telegram/v/${{ inputs.version }})
+            Published to npm: [`@weisser-dev/opencode-remote-telegram@${{ inputs.version }}`](https://www.npmjs.com/package/@weisser-dev/opencode-remote-telegram/v/${{ inputs.version }})
 
             ```bash
-            npm install -g opencode-remote-telegram@${{ inputs.version }}
+            npm install -g @weisser-dev/opencode-remote-telegram@${{ inputs.version }}
             ```
 
             See [CHANGELOG.md](https://github.com/weisser-dev/opencode-remote-telegram/blob/main/CHANGELOG.md) for details.
