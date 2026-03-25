@@ -1,0 +1,50 @@
+{
+  "name": "opencode-remote-telegram",
+  "version": "1.0.0",
+  "description": "You know controlling an agent tool via Telegram from OpenClaw? Or ask OpenCode from Discord? This is the solution for OpenCode from Telegram!",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "bin": {
+    "opencode-remote-telegram": "./dist/src/cli.js",
+    "remote-opencode-telegram": "./dist/src/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --loader ts-node/esm src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "opencode",
+    "telegram",
+    "bot",
+    "ai",
+    "coding",
+    "cli"
+  ],
+  "author": "weisser-dev",
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^0.10.1",
+    "commander": "^14.0.0",
+    "dotenv": "^16.0.0",
+    "eventsource": "^4.1.0",
+    "grammy": "^1.36.3",
+    "picocolors": "^1.1.1",
+    "update-notifier": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
+  }
+}

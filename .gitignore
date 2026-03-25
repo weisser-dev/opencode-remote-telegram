@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment — never commit real credentials
+.env
+
+# OS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
