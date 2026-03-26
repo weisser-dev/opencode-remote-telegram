@@ -2,6 +2,7 @@ import { homedir } from 'os';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import type { BotConfig, ProjectConfig } from '../types/index.js';
+import { discoverDesktopProjects, desktopStateExists } from './DesktopService.js';
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
@@ -59,9 +60,8 @@ export function getBotConfig(): BotConfig | null {
     ? rawIds.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
     : (stored.allowedUserIds ?? []);
 
-  const projectsBasePath = process.env.PROJECTS_BASE_PATH
-    ? expandHome(process.env.PROJECTS_BASE_PATH)
-    : stored.projectsBasePath ? expandHome(stored.projectsBasePath) : undefined;
+  // Backward compat: single projectsBasePath → array
+  const projectsBasePaths = resolveBasePaths(stored);
 
   const openCodeConfigPath = process.env.OPENCODE_CONFIG_PATH
     ? expandHome(process.env.OPENCODE_CONFIG_PATH)
@@ -70,21 +70,59 @@ export function getBotConfig(): BotConfig | null {
   return {
     telegramToken: token,
     allowedUserIds,
-    projectsBasePath,
+    projectsBasePaths,
     openCodeConfigPath,
     useGlobalConfig: stored.useGlobalConfig ?? true,
+    discoverDesktopProjects: stored.discoverDesktopProjects,
   };
+}
+
+/**
+ * Resolves base paths from env, stored array, or legacy single path.
+ * Env var PROJECTS_BASE_PATHS (comma-separated) takes precedence,
+ * then PROJECTS_BASE_PATH (single, legacy), then stored config.
+ */
+function resolveBasePaths(stored: Partial<BotConfig>): string[] {
+  // Env: new multi-path variable
+  const envMulti = process.env.PROJECTS_BASE_PATHS;
+  if (envMulti) {
+    return envMulti.split(',').map(s => expandHome(s.trim())).filter(Boolean);
+  }
+
+  // Env: legacy single path
+  const envSingle = process.env.PROJECTS_BASE_PATH;
+  if (envSingle) {
+    return [expandHome(envSingle)];
+  }
+
+  // Stored: new array
+  if (stored.projectsBasePaths?.length) {
+    return stored.projectsBasePaths.map(p => expandHome(p));
+  }
+
+  // Stored: legacy single path
+  if (stored.projectsBasePath) {
+    return [expandHome(stored.projectsBasePath)];
+  }
+
+  return [];
 }
 
 export function hasBotConfig(): boolean {
   return !!(process.env.TELEGRAM_BOT_TOKEN ?? load().telegramToken);
 }
 
+export function getProjectsBasePaths(): string[] {
+  return resolveBasePaths(load());
+}
+
+/**
+ * @deprecated Use getProjectsBasePaths(). Kept for backward compat in places
+ * that only need the first (or only) base path, e.g. cloning.
+ */
 export function getProjectsBasePath(): string | undefined {
-  const env = process.env.PROJECTS_BASE_PATH;
-  if (env) return expandHome(env);
-  const stored = load().projectsBasePath;
-  return stored ? expandHome(stored) : undefined;
+  const paths = getProjectsBasePaths();
+  return paths.length > 0 ? paths[0] : undefined;
 }
 
 export function getOpenCodeConfigPath(): string | undefined {
@@ -98,19 +136,59 @@ export function isUsingGlobalConfig(): boolean {
   return load().useGlobalConfig ?? true;
 }
 
+export function isDesktopDiscoveryEnabled(): boolean {
+  const stored = load().discoverDesktopProjects;
+  // Auto-enable when explicitly set to true, or when not configured but Desktop exists
+  if (stored !== undefined) return stored;
+  return desktopStateExists();
+}
+
 // ─── Project discovery ────────────────────────────────────────────────────────
 
-export function discoverProjects(): ProjectConfig[] {
-  const basePath = getProjectsBasePath();
-  if (!basePath || !existsSync(basePath)) return [];
+/**
+ * Discovers projects from a single base directory (all subdirectories).
+ */
+function discoverFromFolder(basePath: string): ProjectConfig[] {
+  if (!existsSync(basePath)) return [];
 
   try {
     return readdirSync(basePath)
       .filter(e => !e.startsWith('.') && e !== 'node_modules')
       .filter(e => { try { return statSync(join(basePath, e)).isDirectory(); } catch { return false; } })
-      .map(e => ({ alias: e, path: join(basePath, e) }))
+      .map(e => ({ alias: e, path: join(basePath, e), source: 'folder' as const }))
       .sort((a, b) => a.alias.localeCompare(b.alias));
   } catch {
     return [];
   }
+}
+
+/**
+ * Discovers all projects from all configured sources:
+ *  1. All projectsBasePaths (subdirectory scanning)
+ *  2. OpenCode Desktop project registry (if enabled)
+ *
+ * Deduplicates by path — folder sources take precedence over desktop sources.
+ */
+export function discoverProjects(): ProjectConfig[] {
+  const seen = new Map<string, ProjectConfig>();
+
+  // 1. Folder-based discovery from all configured base paths
+  for (const basePath of getProjectsBasePaths()) {
+    for (const project of discoverFromFolder(basePath)) {
+      if (!seen.has(project.path)) {
+        seen.set(project.path, project);
+      }
+    }
+  }
+
+  // 2. Desktop discovery (if enabled)
+  if (isDesktopDiscoveryEnabled()) {
+    for (const project of discoverDesktopProjects()) {
+      if (!seen.has(project.path)) {
+        seen.set(project.path, project);
+      }
+    }
+  }
+
+  return [...seen.values()].sort((a, b) => a.alias.localeCompare(b.alias));
 }

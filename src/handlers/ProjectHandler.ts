@@ -2,6 +2,7 @@ import type { Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import { rejectUnauthorized, getThreadId } from '../utils/AuthGuard.js';
 import { discoverProjects } from '../services/ConfigService.js';
+import { getDesktopProjectInfos, desktopStateExists } from '../services/DesktopService.js';
 import { DataStore } from '../services/DataStore.js';
 import { ModelHandler } from './ModelHandler.js';
 import { stopAllExcept } from '../services/ServeManager.js';
@@ -10,6 +11,24 @@ import { log } from '../utils/Logger.js';
 // ─── Shortcut registry (still used for /sp1 text shortcuts) ──────────────────
 
 const projectShortcuts = new Map<string, string[]>();
+
+// ─── Desktop metadata lookup ─────────────────────────────────────────────────
+
+function getDesktopMeta(): Map<string, { pinned: boolean; iconColor?: string; isLastActive: boolean }> {
+  const meta = new Map<string, { pinned: boolean; iconColor?: string; isLastActive: boolean }>();
+  if (!desktopStateExists()) return meta;
+  try {
+    for (const info of getDesktopProjectInfos()) {
+      meta.set(info.path, { pinned: info.pinned, iconColor: info.iconColor, isLastActive: info.isLastActive });
+    }
+  } catch { /* ignore */ }
+  return meta;
+}
+
+const COLOR_DOT: Record<string, string> = {
+  red: '🔴', orange: '🟠', yellow: '🟡', lime: '🟢', green: '🟢',
+  mint: '🟢', cyan: '🔵', blue: '🔵', purple: '🟣', pink: '🩷',
+};
 
 export class ProjectHandler {
   /** /sps — inline keyboard with project buttons */
@@ -25,10 +44,17 @@ export class ProjectHandler {
 
     const current = DataStore.getProject(threadId);
     projectShortcuts.set(threadId, projects.map(p => p.alias));
+    const desktopMeta = getDesktopMeta();
 
     const kb = new InlineKeyboard();
     for (const p of projects) {
-      const label = p.alias === current ? `✅ ${p.alias}` : p.alias;
+      const meta = desktopMeta.get(p.path);
+      const dot = meta?.iconColor ? (COLOR_DOT[meta.iconColor.toLowerCase()] ?? '') + ' ' : '';
+      const pin = meta?.pinned ? '📌 ' : '';
+      const tag = p.source === 'desktop' && !meta?.pinned ? ' [Desktop]' : '';
+      const label = p.alias === current
+        ? `✅ ${dot}${pin}${p.alias}${tag}`
+        : `${dot}${pin}${p.alias}${tag}`;
       kb.text(label, `sp:${p.alias}`).row();
     }
 

@@ -5,7 +5,8 @@ import { DataStore } from '../services/DataStore.js';
 import { ProjectHandler } from './ProjectHandler.js';
 import { ModelHandler } from './ModelHandler.js';
 import { ModelService } from '../services/ModelService.js';
-import { discoverProjects, getProjectsBasePath } from '../services/ConfigService.js';
+import { discoverProjects, getProjectsBasePath, isDesktopDiscoveryEnabled } from '../services/ConfigService.js';
+import { desktopStateExists } from '../services/DesktopService.js';
 import { log } from '../utils/Logger.js';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
@@ -44,6 +45,10 @@ export class StartHandler {
         .row()
         .text('📦 Clone a repo', 'quick:new_project')
         .text('❓ Help', 'quick:help');
+
+      if (desktopStateExists()) {
+        kb.row().text('🖥 Desktop projects', 'quick:desktop');
+      }
 
       await ctx.reply(
         `👋 Hey ${firstName}, welcome to opencode-remote-telegram!\n\n` +
@@ -98,6 +103,10 @@ export class HelpHandler {
       `Projects\n` +
       `/list_projects — pick a project\n` +
       `/new_project — clone a GitHub repo\n\n` +
+      `Desktop Integration\n` +
+      `/desktop_projects — projects from OpenCode Desktop\n` +
+      `/desktop_sessions — recent Desktop sessions\n` +
+      `/desktop_pinned — Desktop sidebar projects\n\n` +
       `Models\n` +
       `/list_models — pick a model\n\n` +
       `Coding\n` +
@@ -332,5 +341,8 @@ export async function handleQuickCallback(ctx: Context): Promise<void> {
     await NewProjectHandler.handle(ctx);
   } else if (data === 'quick:help') {
     await HelpHandler.handle(ctx);
+  } else if (data === 'quick:desktop') {
+    const { DesktopHandler } = await import('./DesktopHandler.js');
+    await DesktopHandler.listProjects(ctx);
   }
 }

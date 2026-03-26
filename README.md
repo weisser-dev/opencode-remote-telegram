@@ -61,7 +61,7 @@ opencode-remote-telegram --debug start
 opencode-remote-telegram setup
 ```
 
-The wizard covers four steps:
+The wizard covers five steps:
 
 **1. Telegram Bot Token**
 - Open Telegram → search for **@BotFather**
@@ -75,9 +75,10 @@ The wizard covers four steps:
 - Leave empty to allow anyone — not recommended for public bots
 
 **3. Projects base directory**
-- Point to the folder that contains your projects
+- Point to one or more folders that contain your projects (comma-separated)
 - Every subdirectory is auto-discovered as a project
 - Example: `~/Projects` → discovers `~/Projects/my-app`, `~/Projects/api`, …
+- If OpenCode Desktop is installed, the wizard also asks whether to auto-discover Desktop projects (recommended)
 
 **4. OpenCode config**
 
@@ -109,8 +110,32 @@ Environment variables override the stored config — useful for CI or Docker:
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
 | `TELEGRAM_ALLOWED_USER_IDS` | Comma-separated Telegram user IDs |
 | `PROJECTS_BASE_PATH` | Base directory for project discovery |
+| `PROJECTS_BASE_PATHS` | Multiple base directories (comma-separated) |
 | `OPENCODE_CONFIG_PATH` | Path to a global opencode.json |
 | `HTTPS_PROXY` | HTTP/HTTPS proxy |
+
+---
+
+## OpenCode Desktop Integration
+
+If you have [OpenCode Desktop](https://opencode.ai) installed, the bot can automatically discover projects you've opened there — even if they're not inside your configured base directories.
+
+**How it works:**
+- The bot reads Desktop's state file at `~/Library/Application Support/ai.opencode.desktop/opencode.global.dat` (macOS) or `~/.config/ai.opencode.desktop/opencode.global.dat` (Linux)
+- Projects, sessions, pinned sidebar items, and icon colors are all extracted
+- The state is read live on every request — add a project in Desktop and it instantly appears in the bot
+
+**Auto-detection:** If the Desktop state file exists on your machine, Desktop discovery is enabled automatically. No setup required. You can explicitly disable it via `setup` if you prefer.
+
+**Deduplication:** If a project exists in both your base directories and Desktop, the folder source takes precedence (no duplicates).
+
+### Desktop commands
+
+| Command | Description |
+|---|---|
+| `/desktop_projects` | All Desktop projects with icon colors, pinned status, last used time |
+| `/desktop_sessions` | Recent Desktop coding sessions (sorted by most recent) |
+| `/desktop_pinned` | Projects currently open in the Desktop sidebar |
 
 ---
 

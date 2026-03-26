@@ -1,13 +1,14 @@
 import { Bot } from 'grammy';
 import pc from 'picocolors';
 import { existsSync, readFileSync } from 'fs';
-import { getBotConfig, discoverProjects, getOpenCodeConfigPath, getProjectsBasePath } from './services/ConfigService.js';
+import { getBotConfig, discoverProjects, getOpenCodeConfigPath, getProjectsBasePaths, isDesktopDiscoveryEnabled } from './services/ConfigService.js';
 import { ModelService } from './services/ModelService.js';
 import { stopAll } from './services/ServeManager.js';
 import { log, enableFileLogging } from './utils/Logger.js';
 import { StartHandler, HelpHandler, StatusHandler, ClearHandler, NewProjectHandler, handleQuickCallback } from './handlers/InfoHandlers.js';
 import { ModelHandler } from './handlers/ModelHandler.js';
 import { ProjectHandler } from './handlers/ProjectHandler.js';
+import { DesktopHandler } from './handlers/DesktopHandler.js';
 import { VibeCodingHandler } from './handlers/VibeCodingHandler.js';
 import {
   InterruptHandler,
@@ -47,16 +48,31 @@ function printStartupSummary(models: string[]): void {
     console.log(`  ${pc.dim('Config')}   ${pc.yellow('⚠')}  ${pc.yellow('No global config — each project uses its own opencode.json')}`);
   }
 
-  const basePath = getProjectsBasePath();
+  const basePaths = getProjectsBasePaths();
+  const desktopEnabled = isDesktopDiscoveryEnabled();
   const projects = discoverProjects();
+  const folderProjects = projects.filter(p => p.source === 'folder');
+  const desktopProjects = projects.filter(p => p.source === 'desktop');
+
   if (projects.length > 0) {
-    console.log(`  ${pc.dim('Projects')} ${pc.green('✓')} ${pc.bold(String(projects.length))} detected ${pc.dim(`(${basePath ?? '—'})`)}`);
+    const sources: string[] = [];
+    if (basePaths.length > 0) sources.push(`${basePaths.length} folder(s)`);
+    if (desktopEnabled && desktopProjects.length > 0) sources.push('Desktop');
+    console.log(`  ${pc.dim('Projects')} ${pc.green('✓')} ${pc.bold(String(projects.length))} detected ${pc.dim(`(${sources.join(' + ')})`)}`);
+    for (const bp of basePaths) {
+      const count = folderProjects.filter(p => p.path.startsWith(bp)).length;
+      console.log(`    ${pc.dim('📁')} ${pc.dim(bp)} ${pc.dim(`(${count})`)}`);
+    }
+    if (desktopEnabled && desktopProjects.length > 0) {
+      console.log(`    ${pc.dim('🖥')}  ${pc.dim('OpenCode Desktop')} ${pc.dim(`(${desktopProjects.length})`)}`);
+    }
     for (const p of projects.slice(0, 5)) {
-      console.log(`    ${pc.dim('·')} ${pc.cyan(p.alias)}`);
+      const tag = p.source === 'desktop' ? pc.dim(' [Desktop]') : '';
+      console.log(`    ${pc.dim('·')} ${pc.cyan(p.alias)}${tag}`);
     }
     if (projects.length > 5) console.log(`    ${pc.dim(`… and ${projects.length - 5} more`)}`);
   } else {
-    console.log(`  ${pc.dim('Projects')} ${pc.yellow('⚠')}  no projects found ${pc.dim(`(${basePath ?? 'PROJECTS_BASE_PATH not set'})`)}`);
+    console.log(`  ${pc.dim('Projects')} ${pc.yellow('⚠')}  no projects found ${pc.dim(`(${basePaths.length > 0 ? basePaths.join(', ') : 'no base paths set'})`)}`);
   }
 
   if (models.length > 0) {
@@ -120,6 +136,10 @@ export async function startBot(): Promise<void> {
   bot.command('sp', ctx => ProjectHandler.switchProject(ctx));
   bot.command('new_project', ctx => NewProjectHandler.handle(ctx));
 
+  bot.command('desktop_projects', ctx => DesktopHandler.listProjects(ctx));
+  bot.command('desktop_sessions', ctx => DesktopHandler.listSessions(ctx));
+  bot.command('desktop_pinned', ctx => DesktopHandler.listPinned(ctx));
+
   bot.command('lm', ctx => ModelHandler.listClickable(ctx));
   bot.command('list_models', ctx => ModelHandler.listReadable(ctx));
   bot.command('switch_model', ctx => ModelHandler.switchModel(ctx));
@@ -146,6 +166,8 @@ export async function startBot(): Promise<void> {
   bot.callbackQuery(/^sp:/, ctx => ProjectHandler.handleCallback(ctx));
   bot.callbackQuery(/^lm:/, ctx => ModelHandler.handleCallback(ctx));
   bot.callbackQuery(/^clone:/, ctx => NewProjectHandler.handleCallback(ctx));
+  bot.callbackQuery(/^dtp:/, ctx => DesktopHandler.handleProjectCallback(ctx));
+  bot.callbackQuery(/^dts:/, ctx => DesktopHandler.handleSessionCallback(ctx));
   bot.callbackQuery(/^queue:/, ctx => QueueHandler.handleCallback(ctx));
   bot.callbackQuery(/^resume:/, ctx => MessageHandler.handleResumeCallback(ctx));
   bot.callbackQuery(/^undo:/, ctx => UndoHandler.handleCallback(ctx));

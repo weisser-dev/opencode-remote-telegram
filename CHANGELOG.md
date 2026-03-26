@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] — 2026-03-26
+
+### OpenCode Desktop Integration
+
+Full integration with [OpenCode Desktop](https://opencode.ai) — projects you open in the Desktop app automatically appear in the Telegram bot.
+
+#### New commands
+- `/desktop_projects` — browse all Desktop projects with icon colors, pinned status, and last-used timestamps; tap to switch
+- `/desktop_sessions` — view recent Desktop coding sessions sorted by last active time
+- `/desktop_pinned` — show projects currently open in the Desktop sidebar
+
+#### New service: `DesktopService.ts`
+- Reads OpenCode Desktop state from `~/Library/Application Support/ai.opencode.desktop/opencode.global.dat` (macOS) or `~/.config/ai.opencode.desktop/` (Linux)
+- Parses `globalSync.project`, `server`, and `layout.page` keys for project registry, pinned projects, and session history
+- Live reading on every request — new projects in Desktop appear instantly in the bot
+
+#### Improvements
+- **Auto-discovery**: Desktop project discovery is now enabled by default when OpenCode Desktop is installed (no need to run `setup` again)
+- **Enriched project list**: `/list_projects` buttons now show icon color dots and pinned status from Desktop
+- **`/start` onboarding**: shows a "Desktop projects" quick button when Desktop is detected
+- **`/help`**: lists the new Desktop Integration commands
+
+#### Bug fix
+- Fixed `discoverDesktopProjects()` parsing — the Desktop state wraps the project array in `{ "value": [...] }`, but the old code tried to parse it as a flat array. Projects from Desktop now actually appear.
+
+#### Types
+- Added `DesktopProjectInfo` and `DesktopSessionInfo` interfaces
+
 ## [1.0.0] — 2026-03-25
 
 Initial release. Built with OpenCode & Claude Sonnet (Codex).

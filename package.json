@@ -1,6 +1,6 @@
 {
   "name": "@weisser-dev/opencode-remote-telegram",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "You know controlling an agent tool via Telegram from OpenClaw? Or ask OpenCode from Discord? This is the solution for OpenCode from Telegram!",
   "type": "module",
   "main": "dist/src/index.js",
