@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] — 2026-03-26
+
+First published npm release with OpenCode Desktop integration.
+
+This is the same feature set as 1.1.0 but with the correct version pushed to the npm registry.
+
+### Install / Update
+
+```bash
+npm install -g @weisser-dev/opencode-remote-telegram
+```
+
+### What's new since 1.0.0
+
+See [1.1.0](#110--2026-03-26) below for the full feature list.
+
 ## [1.1.0] — 2026-03-26
 
 ### OpenCode Desktop Integration

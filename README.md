@@ -2,9 +2,13 @@
 
 > Control [OpenCode](https://opencode.ai) from your phone via Telegram.
 
+[![npm version](https://img.shields.io/npm/v/@weisser-dev/opencode-remote-telegram)](https://www.npmjs.com/package/@weisser-dev/opencode-remote-telegram)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 You know controlling an agent tool via Telegram from OpenClaw? Or asking OpenCode from Discord? This is the solution for **OpenCode from Telegram**.
 
-**npm:** [npmjs.com/package/@weisser-dev/opencode-remote-telegram](https://www.npmjs.com/package/@weisser-dev/opencode-remote-telegram)
+**npm:** [`@weisser-dev/opencode-remote-telegram`](https://www.npmjs.com/package/@weisser-dev/opencode-remote-telegram)
 **GitHub:** [github.com/weisser-dev/opencode-remote-telegram](https://github.com/weisser-dev/opencode-remote-telegram)
 
 ---
@@ -12,11 +16,18 @@ You know controlling an agent tool via Telegram from OpenClaw? Or asking OpenCod
 ## Quickstart
 
 ```bash
+# Install globally
 npm install -g @weisser-dev/opencode-remote-telegram
+
+# Start (setup wizard runs automatically on first launch)
 opencode-remote-telegram start
 ```
 
-On first run, the setup wizard launches automatically and walks you through everything step by step.
+### Update to latest version
+
+```bash
+npm update -g @weisser-dev/opencode-remote-telegram
+```
 
 ---
 
