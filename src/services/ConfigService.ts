@@ -1,5 +1,5 @@
 import { homedir } from 'os';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, chmodSync } from 'fs';
 import { join } from 'path';
 import type { BotConfig, ProjectConfig } from '../types/index.js';
 import { discoverDesktopProjects, desktopStateExists } from './DesktopService.js';
@@ -42,8 +42,9 @@ function load(): Partial<BotConfig> {
 }
 
 export function saveConfig(patch: Partial<BotConfig>): void {
-  if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR, { recursive: true });
-  writeFileSync(CONFIG_FILE, JSON.stringify({ ...load(), ...patch }, null, 2), 'utf-8');
+  if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+  writeFileSync(CONFIG_FILE, JSON.stringify({ ...load(), ...patch }, null, 2), { encoding: 'utf-8', mode: 0o600 });
+  try { chmodSync(CONFIG_FILE, 0o600); } catch { /* best effort */ }
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────

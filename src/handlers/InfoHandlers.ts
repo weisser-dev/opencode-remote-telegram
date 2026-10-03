@@ -8,7 +8,8 @@ import { ModelService } from '../services/ModelService.js';
 import { discoverProjects, getProjectsBasePath, isDesktopDiscoveryEnabled } from '../services/ConfigService.js';
 import { desktopStateExists } from '../services/DesktopService.js';
 import { log } from '../utils/Logger.js';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
+import { isValidGitUrl, isSafeDirName } from '../utils/Validation.js';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
@@ -217,7 +218,7 @@ export class NewProjectHandler {
     }
 
     if (state.step === 'awaiting_url') {
-      if (!text.match(/^https?:\/\/.+|^git@.+:.+\/.+/)) {
+      if (!isValidGitUrl(text)) {
         await ctx.reply('That doesn\'t look like a valid git URL. Try again or send /cancel.');
         return;
       }
@@ -288,6 +289,10 @@ export class NewProjectHandler {
       return;
     }
 
+    if (!isSafeDirName(dirName) || !isValidGitUrl(url)) {
+      await ctx.reply('⚠️ Invalid directory name or URL (plain folder name only, no slashes).');
+      return;
+    }
     const targetPath = join(basePath, dirName);
 
     if (existsSync(targetPath)) {
@@ -301,7 +306,7 @@ export class NewProjectHandler {
 
     try {
       log.info(`[clone] ${url} → ${targetPath}`);
-      execSync(`git clone "${url}" "${targetPath}"`, { timeout: 120_000, encoding: 'utf-8' });
+      execFileSync('git', ['clone', '--', url, targetPath], { timeout: 120_000, encoding: 'utf-8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_ALLOW_PROTOCOL: 'https:ssh:http' } });
       DataStore.setProject(threadId, dirName);
       log.info(`[clone] done → ${dirName}`);
 

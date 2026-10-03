@@ -5,7 +5,7 @@ import { config as dotenvConfig } from 'dotenv';
 
 // Load .env from package root as optional override
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-dotenvConfig({ path: join(pkgRoot, '.env') });
+dotenvConfig({ path: join(pkgRoot, '.env'), quiet: true });
 
 import { Command } from 'commander';
 import pc from 'picocolors';

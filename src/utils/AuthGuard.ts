@@ -3,12 +3,19 @@ import { getBotConfig } from '../services/ConfigService.js';
 
 // ─── Auth guard ───────────────────────────────────────────────────────────────
 
+/**
+ * Fail-closed: an empty/missing allowlist authorizes NOBODY.
+ */
+export function isUserAllowed(userId: number | undefined, allowedUserIds: readonly number[] | undefined): boolean {
+  if (userId === undefined || !Number.isSafeInteger(userId)) return false;
+  if (!allowedUserIds || allowedUserIds.length === 0) return false;
+  return allowedUserIds.includes(userId);
+}
+
 export function isAuthorized(ctx: Context): boolean {
   const config = getBotConfig();
   if (!config) return false;
-  if (config.allowedUserIds.length === 0) return true; // open if no list configured
-  const userId = ctx.from?.id;
-  return userId !== undefined && config.allowedUserIds.includes(userId);
+  return isUserAllowed(ctx.from?.id, config.allowedUserIds);
 }
 
 export async function rejectUnauthorized(ctx: Context): Promise<boolean> {

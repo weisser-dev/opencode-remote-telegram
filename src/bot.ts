@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'fs';
 import { getBotConfig, discoverProjects, getOpenCodeConfigPath, getProjectsBasePaths, isDesktopDiscoveryEnabled } from './services/ConfigService.js';
 import { ModelService } from './services/ModelService.js';
 import { stopAll } from './services/ServeManager.js';
+import { isAuthorized } from './utils/AuthGuard.js';
 import { log, enableFileLogging } from './utils/Logger.js';
 import { StartHandler, HelpHandler, StatusHandler, ClearHandler, NewProjectHandler, handleQuickCallback } from './handlers/InfoHandlers.js';
 import { ModelHandler } from './handlers/ModelHandler.js';
@@ -99,7 +100,25 @@ export async function startBot(): Promise<void> {
     );
   }
 
+  if (config.allowedUserIds.length === 0) {
+    throw new Error(
+      'No allowed Telegram user IDs configured — refusing to start (fail-closed).\n' +
+      'Set TELEGRAM_ALLOWED_USER_IDS (comma-separated) or run "opencode-remote-telegram setup".',
+    );
+  }
+
   const bot = new Bot(config.telegramToken);
+
+  // ── Global access control — runs before ANY handler (commands, callbacks, text)
+  bot.use(async (ctx, next) => {
+    if (!isAuthorized(ctx)) {
+      log.warn(`[auth] rejected update from user id ${ctx.from?.id ?? '?'}`);
+      if (ctx.callbackQuery) await ctx.answerCallbackQuery().catch(() => {});
+      else if (ctx.chat?.type === 'private') await ctx.reply('⛔ Unauthorized.').catch(() => {});
+      return;
+    }
+    await next();
+  });
 
   // ── Debug middleware — logs every incoming update and outgoing reply ────────
   bot.use(async (ctx, next) => {

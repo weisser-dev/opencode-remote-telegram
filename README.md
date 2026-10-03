@@ -119,7 +119,7 @@ Environment variables override the stored config — useful for CI or Docker:
 | Variable | Description |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
-| `TELEGRAM_ALLOWED_USER_IDS` | Comma-separated Telegram user IDs |
+| `TELEGRAM_ALLOWED_USER_IDS` | **Required.** Comma-separated Telegram user IDs. Empty = nobody allowed, the bot refuses to start (fail-closed) |
 | `PROJECTS_BASE_PATH` | Base directory for project discovery |
 | `PROJECTS_BASE_PATHS` | Multiple base directories (comma-separated) |
 | `OPENCODE_CONFIG_PATH` | Path to a global opencode.json |
@@ -276,6 +276,14 @@ Releases are triggered manually via GitHub Actions:
 4. The pipeline builds, tests, publishes to npm, creates a git tag and GitHub Release
 
 No auto-publish — every release is a deliberate action.
+
+---
+
+## Security
+
+The bot can make a coding agent run commands on your machine, so access is **fail-closed**: only Telegram user IDs in the allowlist (`TELEGRAM_ALLOWED_USER_IDS` or `config.json`) can use it, enforced for every update before any handler runs. With an empty allowlist the bot does not start. The bot uses long polling (no webhook, no open port). Keep the bot token secret; `config.json` is written with mode `0600`.
+
+> The CLI alias `remote-opencode-telegram` is a legacy name of this project (the old repository of that name is archived); `opencode-remote-telegram` is the maintained package.
 
 ---
 
