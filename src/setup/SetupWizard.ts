@@ -49,13 +49,14 @@ export async function runSetupWizard(isFirstRun = false): Promise<void> {
   note([
     'Restrict the bot to specific Telegram users.',
     'To find your user ID, message @userinfobot in Telegram.',
-    'Leave empty to allow anyone who can reach the bot — not recommended',
-    'if your bot token is shared or the bot is public.',
+    'At least one user ID is required: the bot can run commands on this machine,',
+    'so an empty list means nobody is allowed (fail-closed).',
   ]);
 
   const allowedRaw = await p.text({
-    message: 'Allowed Telegram User IDs (comma-separated, leave empty to allow all):',
+    message: 'Allowed Telegram User IDs (comma-separated, required):',
     placeholder: '123456789, 987654321',
+    validate: v => (String(v || '').split(',').some(x => /^\d+$/.test(x.trim())) ? undefined : 'At least one numeric user ID is required.'),
   });
   if (p.isCancel(allowedRaw)) { p.cancel('Setup cancelled.'); process.exit(0); }
   const allowedUserIds = String(allowedRaw || '')
@@ -188,7 +189,7 @@ export async function runSetupWizard(isFirstRun = false): Promise<void> {
 
   console.log('');
   console.log(`  ${pc.dim('Token')}     ${pc.green('✓')} set`);
-  console.log(`  ${pc.dim('Users')}     ${allowedUserIds.length > 0 ? allowedUserIds.join(', ') : pc.yellow('all (open access)')}`);
+  console.log(`  ${pc.dim('Users')}     ${allowedUserIds.length > 0 ? allowedUserIds.join(', ') : pc.red('none (bot will refuse to start)')}`);
   console.log(`  ${pc.dim('Folders')}   ${projectsBasePaths.map(p => pc.cyan(p)).join(', ')}`);
   if (discoverDesktopProjects) {
     console.log(`  ${pc.dim('Desktop')}   ${pc.green('✓')} auto-discover enabled`);
