@@ -24,3 +24,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # engines target Node 22 LTS; keep the type definitions on the same line
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
